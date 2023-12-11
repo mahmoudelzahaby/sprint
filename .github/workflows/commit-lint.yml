@@ -1,35 +1,36 @@
-name: PR Lint
+name: Validate PR
 
 on:
   pull_request:
-    types: [opened, edited, reopened, synchronize, ready_for_review]
-    branches: [main]
-
-  workflow_dispatch:
+    types:
+      - opened
+      - synchronize
 
 jobs:
   pr-lint:
     name: Validate PR commit title meets commit convention
     runs-on: ubuntu-latest
     steps:
-      - uses: amannn/action-semantic-pull-request@v4.5.0
+      - name: Validate PR Title
+        id: pr-title
+        uses: amannn/action-semantic-pull-request@v4.5.0
         env:
           GITHUB_TOKEN: ${{ secrets.PERSONAL_TOKEN }}
         with:
           validateSingleCommit: true
           validateSingleCommitMatchesPrTitle: true
 
-      - name: Check if linting failed
-        id: lint-check
-        run: echo "::set-output name=lint-failed::${{ failure() }}"
+      - name: Check PR Title
+        run: |
+          prTitleCheckStatus="${{ steps.pr-title.outputs.semantic_pull_request_status }}"
+          if [ "$prTitleCheckStatus" = "error" ]; then
+            echo "Error: PR title does not meet commit convention."
+            exit 1
+          else
+            echo "PR title meets commit convention."
+          fi
 
-  close-pr:
-    name: Close PR if linting fails
-    needs: pr-lint
-    runs-on: ubuntu-latest
-    if: ${{ needs.pr-lint.outputs['lint-failed'] == 'true' }}
-    steps:
-      - name: Close PR
-        uses: peter-evans/close-pull-request@v1
-        with:
-          GITHUB_TOKEN: ${{ secrets.PERSONAL_TOKEN }}
+      - name: Your Next Steps
+        if: success() # Add your specific condition here
+        run: |
+          # Add the steps you want to execute if the PR title meets the commit convention
