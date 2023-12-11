@@ -19,16 +19,18 @@ jobs:
           validateSingleCommit: true
           validateSingleCommitMatchesPrTitle: true
 
-      - name: Check if PR meets requirements
-        id: pr-validation
-        run: echo "::set-output name=isValid::${{ steps.pr-lint.outputs.isValid }}"
-
-      - name: Close PR if not valid
-        if: ${{ steps.pr-validation.outputs.isValid != 'true' }}
+  close-pr:
+    name: Close PR on lint failure
+    runs-on: ubuntu-latest
+    needs: pr-lint
+    if: ${{ failure() }}
+    steps:
+      - name: Close PR
         run: |
-          echo "Closing the pull request as it does not meet the requirements."
-          curl -X PATCH \
+          PR_NUMBER=$(curl -s -H "Authorization: Bearer ${{ secrets.PERSONAL_TOKEN}}" \
+                        "https://api.github.com/repos/${{ github.repository }}/pulls?head=${{ github.head_ref }}" \
+                        | jq -r .[0].number)
+          curl -s -X PATCH -H "Authorization: Bearer ${{ secrets.PERSONAL_TOKEN}}" \
             -H "Accept: application/vnd.github.v3+json" \
-            -H "Authorization: Bearer ${{ secrets.PERSONAL_TOKEN }}" \
             -d '{"state":"closed"}' \
-            "https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}"
+            "https://api.github.com/repos/${{ github.repository }}/pulls/${PR_NUMBER}"
