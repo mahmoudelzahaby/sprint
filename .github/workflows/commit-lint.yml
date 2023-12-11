@@ -20,11 +20,15 @@ jobs:
           validateSingleCommitMatchesPrTitle: true
 
       - name: Check if PR meets requirements
+        id: pr-validation
+        run: echo "::set-output name=isValid::${{ steps.pr-lint.outputs.isValid }}"
+
+      - name: Close PR if not valid
+        if: ${{ steps.pr-validation.outputs.isValid != 'true' }}
         run: |
-          if [ "${{ steps.pr-lint.outputs.isValid }}" != "true" ]; then
-            echo "Closing the pull request as it does not meet the requirements."
-            curl -X POST -H "Authorization: Bearer ${{ secrets.PERSONAL_TOKEN }}" \
-              -H "Accept: application/vnd.github.v3+json" \
-              "https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/merge" \
-              -d '{"commit_title": "Closing PR due to failed validation"}'
-          fi
+          echo "Closing the pull request as it does not meet the requirements."
+          curl -X PATCH \
+            -H "Accept: application/vnd.github.v3+json" \
+            -H "Authorization: Bearer ${{ secrets.PERSONAL_TOKEN }}" \
+            -d '{"state":"closed"}' \
+            "https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}"
