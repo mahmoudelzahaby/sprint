@@ -1,1 +1,1 @@
-print("Hello World sprint b_labs")
+print("Hello World sprint sprinter")
