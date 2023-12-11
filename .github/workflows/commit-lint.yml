@@ -9,28 +9,24 @@ on:
 
 jobs:
   pr-lint:
-    name: Validate PR commit title meets commit convention
+    name: Validate
     runs-on: ubuntu-latest
     steps:
-      - uses: amannn/action-semantic-pull-request@v4.5.0
+      - name: PR Lint
+        id: pr-lint
+        uses: amannn/action-semantic-pull-request@v4.5.0
         env:
           GITHUB_TOKEN: ${{ secrets.PERSONAL_TOKEN }}
         with:
           validateSingleCommit: true
           validateSingleCommitMatchesPrTitle: true
 
-  close-pr:
-    name: Close PR on lint failure
-    runs-on: ubuntu-latest
+  run:
     needs: pr-lint
-    if: ${{ failure() }}
+    if: ${{ needs.pr-lint.result == 'failure' }}
+    runs-on: ubuntu-latest
     steps:
-      - name: Close PR
-        run: |
-          PR_NUMBER=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-                        "https://api.github.com/repos/${{ github.repository }}/pulls?head=${{ github.head_ref }}" \
-                        | jq -r .[0].number)
-          curl -s -X PATCH -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            -H "Accept: application/vnd.github.v3+json" \
-            -d '{"state":"closed"}' \
-            "https://api.github.com/repos/${{ github.repository }}/pulls/${PR_NUMBER}"
+      - name: Close Pull Request
+        uses: superbrothers/close-pull-request@v3
+        with:
+          comment: "We do not accept PRs. If you have any questions, please feel free to contact us."
