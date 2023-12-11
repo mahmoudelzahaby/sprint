@@ -18,17 +18,3 @@ jobs:
         with:
           validateSingleCommit: true
           validateSingleCommitMatchesPrTitle: true
-
-      - name: Check if linting passed
-        run: echo "::set-output name=lint-passed::$(if [ -z "${{ steps.<previous-step-name>.outputs.validation-result }}" ]; then echo "true"; else echo "false"; fi)"
-
-  close-pr:
-    name: Close PR if linting fails
-    needs: pr-lint
-    runs-on: ubuntu-latest
-    if: ${{ needs.pr-lint.outputs.lint-passed == 'false' }}
-    steps:
-      - name: Close PR
-        uses: peter-evans/close-pull-request@v2
-        with:
-          GITHUB_TOKEN: ${{ secrets.PERSONAL_TOKEN }}
