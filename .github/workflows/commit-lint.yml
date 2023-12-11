@@ -18,3 +18,18 @@ jobs:
         with:
           validateSingleCommit: true
           validateSingleCommitMatchesPrTitle: true
+
+      - name: Check if linting failed
+        id: lint-check
+        run: echo "::set-output name=lint-failed::${{ failure() }}"
+
+  close-pr:
+    name: Close PR if linting fails
+    needs: pr-lint
+    runs-on: ubuntu-latest
+    if: ${{ needs.pr-lint.outputs['lint-failed'] == 'true' }}
+    steps:
+      - name: Close PR
+        uses: peter-evans/close-pull-request@v1
+        with:
+          GITHUB_TOKEN: ${{ secrets.PERSONAL_TOKEN }}
