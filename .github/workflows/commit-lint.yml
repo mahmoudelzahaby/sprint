@@ -1,36 +1,20 @@
-name: Validate PR
+name: PR Lint
 
 on:
   pull_request:
-    types:
-      - opened
-      - synchronize
+    types: [opened, edited, reopened, synchronize, ready_for_review]
+    branches: [main]
+
+  workflow_dispatch:
 
 jobs:
   pr-lint:
     name: Validate PR commit title meets commit convention
     runs-on: ubuntu-latest
     steps:
-      - name: Validate PR Title
-        id: pr-title
-        uses: amannn/action-semantic-pull-request@v4.5.0
+      - uses: amannn/action-semantic-pull-request@v4.5.0
         env:
           GITHUB_TOKEN: ${{ secrets.PERSONAL_TOKEN }}
         with:
           validateSingleCommit: true
           validateSingleCommitMatchesPrTitle: true
-
-      - name: Check PR Title
-        run: |
-          prTitleCheckStatus="${{ steps.pr-title.outputs.semantic_pull_request_status }}"
-          if [ "$prTitleCheckStatus" = "error" ]; then
-            echo "Error: PR title does not meet commit convention."
-            exit 1
-          else
-            echo "PR title meets commit convention."
-          fi
-
-      - name: Your Next Steps
-        if: success() # Add your specific condition here
-        run: |
-          # Add the steps you want to execute if the PR title meets the commit convention
