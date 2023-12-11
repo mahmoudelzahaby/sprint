@@ -9,35 +9,12 @@ on:
 
 jobs:
   pr-lint:
-    name: Validate
+    name: Validate PR commit title meets commit convention
     runs-on: ubuntu-latest
     steps:
-      - name: PR Lint
-        id: pr-lint
-        uses: amannn/action-semantic-pull-request@v4.5.0
+      - uses: amannn/action-semantic-pull-request@v4.5.0
         env:
           GITHUB_TOKEN: ${{ secrets.PERSONAL_TOKEN }}
         with:
           validateSingleCommit: true
           validateSingleCommitMatchesPrTitle: true
-
-  # run:
-  #   needs: pr-lint
-  #   if: ${{ needs.pr-lint.result == 'failure' }}
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Close Pull Request
-  #       uses: superbrothers/close-pull-request@v3
-  #       with:
-  #         comment: "We do not accept PRs. If you have any questions, please feel free to contact us."
-
-
-  notify-job:
-    runs-on: ubuntu-20.04
-    needs: [pr-lint]
-    if: ${{ always() && (needs.pr-lint.result == 'failure') }}
-    steps:
-      - name: Close Pull Request
-        uses: superbrothers/close-pull-request@v3
-        with:
-          comment: "We do not accept PRs. If you have any questions, please feel free to contact us."
