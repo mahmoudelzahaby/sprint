@@ -18,11 +18,3 @@ jobs:
         with:
           validateSingleCommit: true
           validateSingleCommitMatchesPrTitle: true
-  run:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: superbrothers/close-pull-request@v3
-      with:
-        github_token: ${{ secrets.PERSONAL_TOKEN }}
-        # Optional. Post a issue comment just before closing a pull request.
-        comment: "We do not accept PRs. If you have any questions, please feel free to contact us."
