@@ -28,16 +28,13 @@ jobs:
     if: ${{ failure() }}
     steps:
       - name: Close PR
-        uses: actions/github-script@v4
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const { Octokit } = require('@octokit/core');
-            const octokit = new Octokit({ auth: context.token });
-
-            await octokit.pulls.update({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: context.issue.number,
-              state: 'closed',
-            });
+        run: |
+          TOKEN="${{ secrets.GITHUB_TOKEN }}"
+          PR_NUMBER="${{ github.event.number }}"
+          REPO_OWNER="${{ github.repository_owner }}"
+          REPO_NAME="${{ github.repository }}"
+          
+          API_URL="https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/pulls/$PR_NUMBER"
+          
+          curl -X PATCH -H "Authorization: token $TOKEN" -H "Content-Type: application/json" \
+            -d '{"state":"closed"}' $API_URL
