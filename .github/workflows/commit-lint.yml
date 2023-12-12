@@ -29,6 +29,6 @@ jobs:
           echo "Closing the pull request as it does not meet the requirements."
           curl -X PATCH \
             -H "Accept: application/vnd.github.v3+json" \
-            -H "Authorization: Bearer ${{ secrets.PERSONAL_TOKEN }}" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
             -d '{"state":"closed"}' \
             "https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}"
