@@ -32,9 +32,10 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const octokit = github.getOctokit(context.token);
+            const { Octokit } = require('@octokit/core');
+            const octokit = new Octokit({ auth: context.token });
 
-            octokit.pulls.update({
+            await octokit.pulls.update({
               owner: context.repo.owner,
               repo: context.repo.repo,
               pull_number: context.issue.number,
