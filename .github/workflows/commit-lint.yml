@@ -36,5 +36,5 @@ jobs:
           
           API_URL="https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/pulls/$PR_NUMBER"
           
-          curl -X PATCH -H "Authorization: token $TOKEN" -H "Content-Type: application/json" \
-            -d '{"state":"closed"}' $API_URL
+          curl -X PATCH -H "Authorization: Bearer $TOKEN" -H "Accept: application/vnd.github.v3+json" "$API_URL" -d '{"state": "closed"}'
+
