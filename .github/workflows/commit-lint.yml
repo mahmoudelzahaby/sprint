@@ -30,7 +30,7 @@ jobs:
       - name: Close PR
         run: |
           TOKEN="${{ secrets.GITHUB_TOKEN }}"
-          PR_NUMBER="${{ github.event.number }}"
+          PR_NUMBER="${{ github.event.pull_request.number }}"
           REPO_OWNER="${{ github.repository_owner }}"
           REPO_NAME="${{ github.repository }}"
           
