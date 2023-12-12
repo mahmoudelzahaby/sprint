@@ -18,3 +18,17 @@ jobs:
         with:
           validateSingleCommit: true
           validateSingleCommitMatchesPrTitle: true
+
+      - name: Check if PR meets requirements
+        id: pr-validation
+        run: echo "::set-output name=isValid::${{ steps.pr-lint.outputs.isValid }}"
+
+      - name: Close PR if not valid
+        if: ${{ steps.pr-validation.outputs.isValid != 'true' }}
+        run: |
+          echo "Closing the pull request as it does not meet the requirements."
+          curl -X PATCH \
+            -H "Accept: application/vnd.github.v3+json" \
+            -H "Authorization: Bearer ${{ secrets.PERSONAL_TOKEN }}" \
+            -d '{"state":"closed"}' \
+            "https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}"
