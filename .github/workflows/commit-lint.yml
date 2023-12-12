@@ -13,23 +13,35 @@ jobs:
     name: Validate PR commit title meets commit convention
     runs-on: ubuntu-latest
     steps:
-      - uses: amannn/action-semantic-pull-request@v4.5.0
+      - name: pr-lint
+        uses: amannn/action-semantic-pull-request@v4.5.0
+        id: pr-lint
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           validateSingleCommit: true
           validateSingleCommitMatchesPrTitle: true
 
-      - name: Check if PR meets requirements
-        id: pr-validation
-        run: echo "::set-output name=isValid::${{ steps.pr-lint.outputs.isValid }}"
+  close_pull_request:
+    runs-on: ubuntu-latest
+    needs: your_job_name
+    steps:
+      - name: Close Pull Request on Failure
+        if: ${{ needs.pr-lint.outputs.status == 'failure' }}
+        uses: actions/github-script@v7
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          script: |
+            const github = context.github;
+            const contextRepo = github.repo;
+            const prNumber = context.payload.pull_request.number;
 
-      - name: Close PR if not valid
-        if: ${{ steps.pr-validation.outputs.isValid != 'true' }}
-        run: |
-          echo "Closing the pull request as it does not meet the requirements."
-          curl -X PATCH \
-            -H "Accept: application/vnd.github.v3+json" \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            -d '{"state":"closed"}' \
-            "https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}"
+            github.pulls.update({
+              owner: contextRepo.owner,
+              repo: contextRepo.repo,
+              pull_number: prNumber,
+              state: 'closed'
+            });
+          
+    
