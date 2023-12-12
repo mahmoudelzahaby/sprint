@@ -1,5 +1,4 @@
 name: PR Lint
-permissions: write-all
 
 on:
   pull_request:
@@ -13,35 +12,32 @@ jobs:
     name: Validate PR commit title meets commit convention
     runs-on: ubuntu-latest
     steps:
-      - name: pr-lint
+      - name: PR Lint Step
+        id: pr-lint-step
         uses: amannn/action-semantic-pull-request@v4.5.0
-        id: pr-lint
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           validateSingleCommit: true
           validateSingleCommitMatchesPrTitle: true
 
-  close_pull_request:
+  close-pr:
+    name: Close PR on failure
     runs-on: ubuntu-latest
-    needs: your_job_name
+    needs: pr-lint
+    if: ${{ failure() }}
     steps:
-      - name: Close Pull Request on Failure
-        if: ${{ needs.pr-lint.outputs.status == 'failure' }}
-        uses: actions/github-script@v7
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Close PR
+        uses: actions/github-script@v4
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const github = context.github;
-            const contextRepo = github.repo;
-            const prNumber = context.payload.pull_request.number;
+            const context = github.context;
+            const octokit = new github.getOctokit(github.token);
 
-            github.pulls.update({
-              owner: contextRepo.owner,
-              repo: contextRepo.repo,
-              pull_number: prNumber,
-              state: 'closed'
+            octokit.pulls.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+              state: 'closed',
             });
-          
-    
