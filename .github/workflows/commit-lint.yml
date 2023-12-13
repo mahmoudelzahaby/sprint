@@ -1,40 +1,57 @@
-name: PR Lint
+name: Lint and Close PR
 
 on:
-  pull_request:
-    types: [opened, edited, reopened, synchronize, ready_for_review]
-    branches: [main]
+  pull_request_target:
+    types:
+      - opened
+      - edited
+      - synchronize
 
-  workflow_dispatch:
+permissions: write-all
 
 jobs:
-  pr-lint:
-    name: Validate PR commit title meets commit convention
+  code_check:
+    name: Validate PR title
     runs-on: ubuntu-latest
     steps:
-      - name: PR Lint Step
-        id: pr-lint-step
-        uses: amannn/action-semantic-pull-request@v4.5.0
-        env:
-          GITHUB_TOKEN: ${{ secrets.PERSONAL_TOKEN }}
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Validate PR title
+        id: lint_pr_title
+        uses: amannn/action-semantic-pull-request@v5
         with:
-          validateSingleCommit: true
-          validateSingleCommitMatchesPrTitle: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Add linting error comment
+        if: steps.lint_pr_title.outputs.error_message != null
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: pr-title-lint-error
+          message: |
+            Hey there and thank you for opening this pull request! 
+
+            Details:
+            ```
+            ${{ steps.lint_pr_title.outputs.error_message }}
+            ```
   close-pr:
-    name: Close PR on failure
+    name: Process PR
+    if: failure()
+    needs: code_check
     runs-on: ubuntu-latest
-    needs: pr-lint
-    if: ${{ failure() }}
     steps:
-      - name: Close PR
-        run: |
-          TOKEN="${{ secrets.GITHUB_TOKEN }}"
-          PR_NUMBER="${{ github.event.pull_request.number }}"
-          REPO_OWNER="${{ github.repository_owner }}"
-          REPO_NAME="${{ github.repository }}"
-          
-          API_URL="https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/pulls/$PR_NUMBER"
-          
-          curl -X PATCH -H "Authorization: Bearer $TOKEN" -H "Accept: application/vnd.github.v3+json" "$API_URL" -d '{"state": "closed"}'
+      - name: Get PR number
+        id: get_pr_number
+        run: echo "PR_NUMBER=$(jq -r '.pull_request.number' $GITHUB_EVENT_PATH)" >> $GITHUB_ENV
 
+      - name: Close PR
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: parseInt('${{env.PR_NUMBER}}'),
+              state: 'closed'
+            })
